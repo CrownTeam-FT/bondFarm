@@ -1,4 +1,5 @@
 -- ┌───────────────────────────────────────────────────────────────────────────
+-- │                              Fluxus Farm                              │
 -- │                              MADE BY                                  │
 -- │                           cyberseall                                  │
 -- │                       aka Terry Davis                                 │
@@ -12,6 +13,7 @@
 -- │   • Teleport queue integration                                           │
 -- │   • Added GUI with animated appearance and bond counter                  │
 -- │   • Retry logic for bond collection                                      │
+-- │   • Teleport to safe location after farming                              │
 -- ├───────────────────────────────────────────────────────────────────────────
 -- │ Release Notice:                                                          │
 -- │   This source code is released as-is because I'm tired of constantly     │
@@ -140,6 +142,9 @@ local function farmBonds(bondCounterLabel)
         end
     end
 
+    -- Телепортация в безопасное место вместо возвращения к стулу
+    local safeLocation = CFrame.new(0, 50, 0) -- Замени на свои безопасные координаты
+    hrp.CFrame = safeLocation
     humanoid:TakeDamage(999999)
     EndDecisionRemote:FireServer(false)
 
@@ -173,7 +178,7 @@ Corner.Parent = Frame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0.2, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Bond Farmer"
+Title.Text = "Fluxus Farm"  -- Новая надпись
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
