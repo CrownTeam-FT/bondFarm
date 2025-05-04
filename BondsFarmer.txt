@@ -77,6 +77,27 @@ local function farmBonds(bondCounterLabel)
     bondCount = 0 -- Сбрасываем счётчик перед началом фарма
     bondCounterLabel.Text = "Bonds Collected: 0"
 
+    -- Определяем безопасное место для телепортации
+    local chair = Workspace:WaitForChild("RuntimeItems"):FindFirstChild("Chair")
+    assert(chair, "Chair not found")
+    local chairPosition = chair:GetModelCFrame().Position
+    local safeDistance = 1000 -- Безопасное расстояние от стула
+    local safeX = chairPosition.X + math.random(-safeDistance, safeDistance)
+    local safeZ = chairPosition.Z + math.random(-safeDistance, safeDistance)
+    local safeY = 50 -- Высота для безопасной телепортации
+    local safeLocation = CFrame.new(safeX, safeY, safeZ)
+
+    -- Отслеживание урона (если здоровье уменьшилось, телепортируемся)
+    local lastHealth = humanoid.Health
+    local connection
+    connection = humanoid.HealthChanged:Connect(function(health)
+        if health < lastHealth then
+            print("Получил урон, телепортируюсь в безопасное место!")
+            hrp.CFrame = safeLocation
+        end
+        lastHealth = health
+    end)
+
     print("=== Starting map scan ===")
     local scanTarget = CFrame.new(-424.448975, 26.055481, -49040.6562, -1,0,0, 0,1,0, 0,0,-1)
     local scanSteps = 50
@@ -93,10 +114,10 @@ local function farmBonds(bondCounterLabel)
     print(("→ %d Bonds found"):format(#bondData))
     if #bondData == 0 then
         warn("No Bonds found – check Runtime Items shit")
+        connection:Disconnect()
         return
     end
 
-    local chair = Workspace:WaitForChild("RuntimeItems"):FindFirstChild("Chair")
     assert(chair and chair:FindFirstChild("Seat"), "Chair.Seat not found")
     local seat = chair.Seat
 
@@ -104,10 +125,14 @@ local function farmBonds(bondCounterLabel)
     task.wait(0.2)
     assert(humanoid.SeatPart == seat, "Seat error")
 
+    -- КОГДА ПОЛУЧИЛ СТУЛ НАХУЙ ТЕЛЕПОРТИРУЙСЯ ОТТУДА И НЕ ВОЗВРАЩАЙСЯ
+    hrp.CFrame = safeLocation -- Телепортируемся сразу после получения стула
+
     for idx, entry in ipairs(bondData) do
         if not farming then break end
         print(("--- Bond %d/%d: %s ---"):format(idx, #bondData, entry.key))
 
+        -- Телепортируемся к бонду
         local targetCFrame = CFrame.new(entry.pos) * CFrame.new(0, 2, 0)
         seat:PivotTo(targetCFrame)
         task.wait(0.05)
@@ -138,11 +163,15 @@ local function farmBonds(bondCounterLabel)
         end
 
         if not collected then
-            warn("Failed to collect bond after " .. maxAttempts .. " attempts")
+            warn("Failed to collect bond after " .. maxAttempts .. " attempts, телепортируюсь в безопасное место!")
+            hrp.CFrame = safeLocation
         end
+
+        -- После сбора бонда сразу телепортируемся обратно в безопасное место
+        hrp.CFrame = safeLocation
     end
 
-    local safeLocation = CFrame.new(0, 50, 0)
+    -- Финальная телепортация в безопасное место
     hrp.CFrame = safeLocation
     humanoid:TakeDamage(999999)
     EndDecisionRemote:FireServer(false)
@@ -151,6 +180,8 @@ local function farmBonds(bondCounterLabel)
         queue_on_tp('PUT YOUR SHIT HERE')
     end
 
+    -- Отключаем отслеживание здоровья после завершения
+    connection:Disconnect()
     print("=== Script finished ===")
 end
 
